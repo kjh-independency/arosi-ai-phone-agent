@@ -1,0 +1,6 @@
+# ASCII only in this file: pip on Korean Windows reads it as cp949.
+# anthropic 2.x changes the auth header and API version, which GMS rejects.
+anthropic>=1,<2
+python-dotenv
+fastapi
+uvicorn

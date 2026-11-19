@@ -1,0 +1,40 @@
+# 비밀이 아닌 설정값. 공급자와 모델은 이 파일에서만 바꾼다.
+
+[provider]
+# GMS(개발·실험용). 회사 Claude API 키로 바꾸려면 아래 두 줄만 바꾼다:
+#   anthropic_base_url = "https://api.anthropic.com"
+#   key_env = "ANTHROPIC_API_KEY"
+anthropic_base_url = "https://gms.ssafy.io/gmsapi/api.anthropic.com"
+key_env = "GMS_KEY"
+gms_base = "https://gms.ssafy.io/gmsapi"
+
+[agent]
+# 크레딧 예산 때문에 GMS에서는 Haiku가 기본이다.
+# Opus는 입력 단가가 40배, Sonnet은 20배다. 회사 키로 바꾼 뒤에 "claude-opus-5-5"로 올린다.
+model = "claude-haiku-5-5"
+effort = "low"
+max_tokens = 4096
+max_tool_rounds = 6
+timeout_sec = 20
+# GMS는 캐시된 토큰도 일반 입력과 같은 값으로 차감한다. 크레딧은 안 줄고 응답 시간에만 영향이 있다.
+prompt_cache = true
+
+[eval]
+judge_model = "claude-haiku-5-5"
+reps = 1
+
+[voice]
+stt_model = "whisper-1"
+# 받아쓰기가 낯선 낱말을 틀리지 않게 알려 주는 힌트
+stt_prompt = "아로시 고객센터 통화. 주문번호, 송장번호, 배송, 취소, 반품, 환불, 사은품, 상담원."
+# gpt-4o-mini-tts는 GMS에서 짧은 문장 한 번 외에는 응답이 끝나지 않아 쓰지 않는다
+tts_model = "gemini-3.8-flash-lite-tts"
+tts_voice = "Kore"
+tts_style = "calm and friendly customer service agent"
+
+[demo]
+now = "2026-11-25T14:00:00+09:00"
+ship_delay_hours = 24
+
+[keypad]
+order_number_length = 6

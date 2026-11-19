@@ -1,0 +1,143 @@
+[
+  {
+    "order_number": "100001",
+    "customer_name": "김하늘",
+    "customer_phone": "01000000001",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-23T10:12:00",
+    "paid_at": "2026-11-23T10:13:00",
+    "items": [{"name": "수분 진정 크림 50ml", "qty": 1}],
+    "shipments": [
+      {"items": ["수분 진정 크림 50ml"], "status": "배송중", "carrier": "CJ대한통운", "tracking_number": "640012345678", "shipped_at": "2026-11-24", "eta": "2026-11-26", "delivered_at": null}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100002",
+    "customer_name": "이서준",
+    "customer_phone": "01000000002",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-25T09:28:00",
+    "paid_at": "2026-11-25T09:30:00",
+    "items": [{"name": "콜라겐 앰플 30ml", "qty": 1}],
+    "shipments": [
+      {"items": ["콜라겐 앰플 30ml"], "status": "상품준비중", "carrier": null, "tracking_number": null, "shipped_at": null, "eta": null, "delivered_at": null}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100003",
+    "customer_name": "박지우",
+    "customer_phone": "01000000003",
+    "channel": "네이버 스마트스토어",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-20T19:40:00",
+    "paid_at": "2026-11-20T19:41:00",
+    "items": [{"name": "데일리 선크림 50ml", "qty": 2}],
+    "shipments": [
+      {"items": ["데일리 선크림 50ml"], "status": "배송완료", "carrier": "한진택배", "tracking_number": "510098765432", "shipped_at": "2026-11-21", "eta": "2026-11-23", "delivered_at": "2026-11-23"}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100004",
+    "customer_name": "최은서",
+    "customer_phone": "01000000004",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-20T14:58:00",
+    "paid_at": "2026-11-20T15:00:00",
+    "items": [{"name": "모이스처 토너 200ml", "qty": 1}],
+    "shipments": [
+      {"items": ["모이스처 토너 200ml"], "status": "상품준비중", "carrier": null, "tracking_number": null, "shipped_at": null, "eta": null, "delivered_at": null}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100005",
+    "customer_name": "정다온",
+    "customer_phone": "01000000005",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-21T11:05:00",
+    "paid_at": "2026-11-21T11:06:00",
+    "items": [{"name": "스킨케어 3종 세트", "qty": 1}],
+    "shipments": [
+      {"items": ["모이스처 토너 200ml", "콜라겐 앰플 30ml"], "status": "배송완료", "carrier": "CJ대한통운", "tracking_number": "640011112222", "shipped_at": "2026-11-23", "eta": "2026-11-24", "delivered_at": "2026-11-24"},
+      {"items": ["수분 진정 크림 50ml"], "status": "배송중", "carrier": "CJ대한통운", "tracking_number": "640011113333", "shipped_at": "2026-11-24", "eta": "2026-11-26", "delivered_at": null}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100006",
+    "customer_name": "강민서",
+    "customer_phone": "01000000006",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-21T16:20:00",
+    "paid_at": "2026-11-21T16:21:00",
+    "items": [{"name": "스킨케어 3종 세트", "qty": 1}],
+    "shipments": [
+      {"items": ["모이스처 토너 200ml", "콜라겐 앰플 30ml"], "status": "배송완료", "carrier": "CJ대한통운", "tracking_number": "640022221111", "shipped_at": "2026-11-23", "eta": "2026-11-24", "delivered_at": "2026-11-24"},
+      {"items": ["수분 진정 크림 50ml"], "status": "상품준비중", "carrier": null, "tracking_number": null, "shipped_at": null, "eta": null, "delivered_at": null}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100007",
+    "customer_name": "윤서아",
+    "customer_phone": "01000000007",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-21T09:15:00",
+    "paid_at": "2026-11-21T09:16:00",
+    "items": [{"name": "스킨케어 3종 세트", "qty": 1}],
+    "shipments": [
+      {"items": ["모이스처 토너 200ml", "콜라겐 앰플 30ml"], "status": "배송완료", "carrier": "CJ대한통운", "tracking_number": "640033331111", "shipped_at": "2026-11-23", "eta": "2026-11-24", "delivered_at": "2026-11-24"},
+      {"items": ["수분 진정 크림 50ml"], "status": "배송완료", "carrier": "CJ대한통운", "tracking_number": "640033332222", "shipped_at": "2026-11-23", "eta": "2026-11-24", "delivered_at": "2026-11-24"}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100008",
+    "customer_name": "한지호",
+    "customer_phone": "01000000008",
+    "channel": "CJ온스타일",
+    "fulfillment": "센터배송",
+    "ordered_at": "2026-11-22T21:10:00",
+    "paid_at": "2026-11-22T21:11:00",
+    "items": [{"name": "콜라겐 마스크 세트", "qty": 1}],
+    "shipments": [],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  },
+  {
+    "order_number": "100009",
+    "customer_name": "김하늘",
+    "customer_phone": "01000000001",
+    "channel": "자사몰",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-20T10:30:00",
+    "paid_at": "2026-11-20T10:31:00",
+    "items": [{"name": "콜라겐 앰플 30ml", "qty": 2}],
+    "shipments": [
+      {"items": ["콜라겐 앰플 30ml"], "status": "배송완료", "carrier": "CJ대한통운", "tracking_number": "640044441111", "shipped_at": "2026-11-20", "eta": "2026-11-21", "delivered_at": "2026-11-21"}
+    ],
+    "gift": {"eligible": true, "name": "수분 진정 크림 미니 15ml", "reason": "블랙프라이데이 위크 5만 원 이상 구매 사은품"}
+  },
+  {
+    "order_number": "100010",
+    "customer_name": "오유진",
+    "customer_phone": "01000000010",
+    "channel": "CJ온스타일",
+    "fulfillment": "자사출고",
+    "ordered_at": "2026-11-22T21:30:00",
+    "paid_at": "2026-11-22T21:31:00",
+    "items": [{"name": "콜라겐 마스크 세트", "qty": 1}],
+    "shipments": [
+      {"items": ["콜라겐 마스크 세트"], "status": "배송중", "carrier": "한진택배", "tracking_number": "510055556666", "shipped_at": "2026-11-24", "eta": "2026-11-26", "delivered_at": null}
+    ],
+    "gift": {"eligible": false, "name": null, "reason": null}
+  }
+]

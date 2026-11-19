@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>아로시 AI 전화 상담 데모</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* 스타일에는 색상 값을 직접 쓰지 않고 아래 토큰만 쓴다. */
+  :root {
+    --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    --font-size-caption: 12px; --font-size-small: 13px; --font-size-body: 14px; --font-size-message: 16px; --line-height-message: 1.6;
+    --font-size-title: 18px; --font-size-key: 26px; --font-size-key-sub: 9px; --font-size-display: 22px;
+    --font-weight-regular: 400; --font-weight-bold: 700; --line-height-body: 1.5; --letter-spacing-tight: -0.02em;
+    --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 32px;
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-bubble: 20px; --radius-phone: 32px; --radius-full: 9999px;
+    --shadow-bubble: 0 1px 2px rgba(14,46,92,.06), 0 4px 16px rgba(14,46,92,.06);
+    --shadow-sm: 0 0 0 1px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.08);
+    --shadow-md: 0 0 0 1px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.08);
+    --layout-phone-width: 280px; --layout-log-width: 400px; --layout-gap: var(--space-md); --layout-page-padding: var(--space-lg);
+    --key-size: 64px; --bar-height: 12px; --duration-fast: 150ms;
+
+    --color-primary: #1E63C4; --color-primary-hover: #1751A6; --color-on-primary: #FFFFFF; --color-primary-text: #1E63C4; --color-primary-soft: #EAF3FF;
+    --color-bg: #F7FAFD; --color-key: #EEF3F8; --color-card: #FFFFFF; --color-border: #E1E8F0; --color-text: #0E2E5C; --color-text-sub: #5C6B7C;
+    --color-success: #1E9A62; --color-success-bg: #E3F4EC; --color-warning: #B27A1F; --color-warning-bg: #FBF0D9; --color-error: #D8453F; --color-error-bg: #FBE4E4;
+    --color-bar-stt: #63C6D8; --color-bar-agent: #1E63C4; --color-bar-tts: #0E2E5C;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--font-size-body); line-height:var(--line-height-body); background:var(--color-bg); color:var(--color-text); }
+  button, input { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  button:disabled, input:disabled { opacity:.4; cursor:not-allowed; }
+  :focus-visible { outline:3px solid var(--color-primary-text); outline-offset:2px; }
+  .num { font-variant-numeric:tabular-nums; }
+  .sub { color:var(--color-text-sub); }
+  .hint { color:var(--color-text-sub); font-size:var(--font-size-caption); margin:var(--space-sm) 0; }
+
+  header { display:flex; gap:var(--space-sm); align-items:center; flex-wrap:wrap; padding:var(--space-md) var(--layout-page-padding); background:var(--color-card); border-bottom:1px solid var(--color-border); }
+  header h1 { font-size:var(--font-size-title); margin:0 auto 0 0; letter-spacing:var(--letter-spacing-tight); }
+  .chip { background:var(--color-bg); color:var(--color-text-sub); border-radius:var(--radius-full); padding:2px 10px; font-size:var(--font-size-caption); }
+
+  .card { background:var(--color-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); padding:var(--space-md); }
+  h2 { font-size:var(--font-size-body); margin:0 0 var(--space-sm); }
+  h2 small { font-weight:var(--font-weight-regular); color:var(--color-text-sub); }
+
+  .status { display:flex; gap:var(--layout-gap); flex-wrap:wrap; padding:var(--space-md) var(--layout-page-padding); }
+  .status div { flex:1; min-width:180px; font-weight:var(--font-weight-bold); }
+  .status b { display:block; font-size:var(--font-size-caption); color:var(--color-text-sub); font-weight:var(--font-weight-regular); }
+
+  /* 3단: 전화기 / 대화 기록 / 시간 막대 + 툴 로그. 높이는 전화기가 정하고 나머지는 그 안에서 스크롤한다 */
+  main { display:grid; grid-template-columns:var(--layout-phone-width) minmax(0,1fr) var(--layout-log-width); gap:var(--layout-gap); padding:0 var(--layout-page-padding) var(--space-md); }
+  .chat, .right { contain:size; min-height:0; }
+  .chat, .right, .logs { display:flex; flex-direction:column; }
+  .right { gap:var(--layout-gap); }
+  .logs { flex:1; min-height:0; }
+  .scroll { flex:1; min-height:0; overflow-y:auto; }
+
+  /* 전화기 */
+  .phone { background:var(--color-card); border-radius:var(--radius-phone); box-shadow:var(--shadow-md); padding:var(--space-lg); }
+  .phone button, #text { height:44px; border:1px solid var(--color-border); border-radius:var(--radius-sm); background:var(--color-card); padding:0 var(--space-md); }
+  .screen { position:relative; }
+  .phone #back { position:absolute; right:-8px; top:0; width:44px; height:44px; padding:0; border:0; background:none; color:var(--color-text-sub); font-size:var(--font-size-title); }
+  #back:hover:enabled { color:var(--color-text); }
+  #display { height:44px; padding:0 36px; display:grid; place-items:center; overflow:hidden; white-space:nowrap; font-size:var(--font-size-display);  font-variant-numeric:tabular-nums; }
+  #display:empty::before { content:"주문번호 입력"; font-size:var(--font-size-body); letter-spacing:0; color:var(--color-text-sub); }
+  #callstate { text-align:center; color:var(--color-text-sub); margin-bottom:var(--space-lg); }
+  #keys { display:grid; grid-template-columns:repeat(3,1fr); justify-items:center; gap:var(--space-md) 0; }
+  #keys button, .calls button { display:grid; place-content:center; justify-items:center; width:var(--key-size); height:var(--key-size); padding:0; border:0; border-radius:50%; transition:transform var(--duration-fast), background var(--duration-fast); }
+  #keys button { background:var(--color-key); font-size:var(--font-size-key); line-height:1; }
+  #keys small { height:10px; font-size:var(--font-size-key-sub); letter-spacing:.12em; color:var(--color-text-sub); }
+  .calls { display:flex; justify-content:space-evenly; margin:var(--space-lg) 0 var(--space-md); }
+  .calls button { color:var(--color-on-primary); }
+  .calls svg { width:28px; height:28px; fill:currentColor; }
+  #start { background:var(--color-success); }
+  #hangup { background:var(--color-error); }
+  #hangup svg { transform:rotate(135deg); }
+  .phone hr { border:0; border-top:1px solid var(--color-border); margin:var(--space-md) 0; }
+  #keys button:hover:enabled { background:var(--color-primary-soft); }
+  #keys button:active:enabled, .calls button:active:enabled { transform:scale(.96); }
+  #say { display:flex; gap:var(--space-sm); margin-top:var(--space-xs); }
+  #text { flex:1; min-width:0; padding:0 var(--space-sm); }
+  .voice { display:block; margin-top:var(--space-md); }
+  .voice b { color:var(--color-text); }
+  #mic { width:100%; margin-top:var(--space-sm); }
+  .meter { height:var(--space-sm); background:var(--color-bg); border-radius:var(--radius-full); margin-top:var(--space-sm); overflow:hidden; }
+  #level { height:100%; width:0; background:var(--color-success); }
+  #playback { width:100%; margin-top:var(--space-sm); display:none; }
+
+  /* 대화 기록 */
+  /* 고객은 둥근 흰 말풍선, 봇은 말풍선 없이 이름표 + 본문. 봇은 오른쪽, 고객은 왼쪽 (DESIGN.md 5.2) */
+  #chat { background:linear-gradient(var(--color-card) 30%, var(--color-primary-soft)); border-radius:var(--radius-md); padding:var(--space-lg) var(--space-md); display:flex; flex-direction:column; }
+  .msg { max-width:80%; align-self:flex-start; margin-top:var(--space-lg); }
+  .msg:first-child { margin-top:0; }
+  .msg small { display:block; font-size:var(--font-size-caption); color:var(--color-text-sub); margin:0 0 var(--space-xs) var(--space-xs); }
+  .msg p { margin:0; font-size:var(--font-size-message); line-height:var(--line-height-message); overflow-wrap:anywhere; }
+  .customer p, .keypad p { padding:var(--space-sm) var(--space-md); border-radius:var(--radius-bubble); background:var(--color-card); box-shadow:var(--shadow-bubble); }
+  .keypad p { font-weight:var(--font-weight-bold); font-variant-numeric:tabular-nums; }
+  .bot, .filler { align-self:flex-end; }
+  .who { display:flex; align-items:center; gap:var(--space-sm); margin-bottom:var(--space-sm); }
+  .who i { flex:none; display:grid; place-items:center; width:28px; height:28px; border-radius:var(--radius-sm); background:var(--color-card); box-shadow:var(--shadow-bubble); }
+  .who i::before { content:""; width:10px; height:10px; border-radius:50%; background:var(--color-primary); }
+  .who span { font-size:var(--font-size-caption); color:var(--color-text-sub); }
+  .filler p { color:var(--color-text-sub); }
+  .filler + .bot { margin-top:var(--space-sm); }  /* 조회 중 멘트 바로 뒤의 답은 이름표 없이 이어 붙인다 */
+  .filler + .bot .who { display:none; }
+  .notice { margin-top:var(--space-lg); align-self:center; background:var(--color-error-bg); color:var(--color-error); border-radius:var(--radius-full); padding:2px 12px; font-size:var(--font-size-caption); font-weight:var(--font-weight-bold); }
+
+  /* 턴별 시간 막대: STT → 에이전트 → TTS, 모든 턴이 같은 눈금을 쓴다 */
+  .legend { display:flex; gap:var(--space-md); font-size:var(--font-size-caption); color:var(--color-text-sub); }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:var(--space-xs); }
+  #bars { max-height:200px; overflow:hidden auto; }
+  .row { display:grid; grid-template-columns:36px 1fr 44px; gap:var(--space-sm); align-items:center; padding:5px 0; font-size:var(--font-size-small); }
+  .row b { text-align:right; }
+  .lane { position:relative; }
+  .lane::after { content:""; position:absolute; left:var(--one-sec); top:-5px; bottom:-5px; border-left:1px dashed var(--color-text-sub); }  /* 1초 기준선 */
+  .axis { padding:0; font-size:var(--font-size-caption); color:var(--color-text-sub); }
+  .axis .lane { height:16px; } .axis .lane::after { display:none; }
+  .axis .lane span { position:absolute; left:var(--one-sec); transform:translateX(-50%); }
+  .track { display:flex; gap:2px; height:var(--bar-height); background:var(--color-bg); border-radius:var(--radius-full); overflow:hidden; }
+  .track span { min-width:0; }
+  .stt { background:var(--color-bar-stt); } .agent { background:var(--color-bar-agent); } .tts { background:var(--color-bar-tts); }
+  .spin { display:inline-block; width:12px; height:12px; border:2px solid var(--color-border); border-top-color:var(--color-primary); border-radius:50%; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* 툴 호출 로그 */
+  .log { display:grid; grid-template-columns:auto 1fr; gap:2px var(--space-sm); background:var(--color-bg); border-radius:var(--radius-md); padding:var(--space-sm) var(--space-md); margin-bottom:var(--space-sm); font-size:var(--font-size-small); border-left:3px solid transparent; }
+  .log .name { font-size:var(--font-size-body); font-weight:var(--font-weight-bold); display:flex; justify-content:space-between; gap:var(--space-sm); }
+  .log .name small { font-weight:var(--font-weight-regular); color:var(--color-text-sub); font-size:var(--font-size-caption); white-space:nowrap; }
+  .log .body { grid-column:2; min-width:0; overflow-wrap:anywhere; }
+  .badge { height:20px; line-height:20px; padding:0 6px; border-radius:var(--radius-sm); font-size:var(--font-size-caption); font-weight:var(--font-weight-bold); white-space:nowrap; }
+  .ok .badge { color:var(--color-success); background:var(--color-success-bg); }
+  .deny { border-left-color:var(--color-warning); } .deny .badge { color:var(--color-warning); background:var(--color-warning-bg); }
+  .err { border-left-color:var(--color-error); } .err .badge { color:var(--color-error); background:var(--color-error-bg); }
+  details { font-size:var(--font-size-caption); color:var(--color-text-sub); }
+  pre { white-space:pre-wrap; word-break:break-all; margin:var(--space-xs) 0; background:var(--color-card); padding:var(--space-sm); border-radius:var(--radius-sm); }
+
+  .foot { padding:0 var(--layout-page-padding) var(--space-lg); }
+  table { border-collapse:collapse; width:100%; font-size:var(--font-size-small); }
+  th,td { border-bottom:1px solid var(--color-border); padding:6px 8px; text-align:left; }
+  th { color:var(--color-text-sub); font-weight:var(--font-weight-regular); }
+  .pick { border:0; border-radius:var(--radius-sm); padding:2px var(--space-sm); background:var(--color-primary-soft); color:var(--color-primary-text); font-weight:var(--font-weight-bold); font-variant-numeric:tabular-nums; }
+  .pick:hover { background:var(--color-primary); color:var(--color-on-primary); }
+
+  /* 좁은 화면: 전화기 → 대화 → 시간 막대 → 툴 로그 순서로 세로로 쌓는다 */
+  @media (max-width:1200px) {  /* 이보다 좁으면 3단에서 대화창이 너무 좁아진다 */
+    main { grid-template-columns:minmax(0,1fr); }
+    .phone { width:var(--layout-phone-width); max-width:100%; margin:0 auto; }
+    .chat, .right { contain:none; }
+    .scroll { flex:none; max-height:460px; }
+  }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>아로시 AI 전화 상담 데모</h1>
+  <span class="chip" id="model">모델 -</span>
+  <span class="chip" id="today">데모 기준일 -</span>
+  <span class="chip">더미 데이터</span>
+</header>
+
+<div class="status">
+  <div class="card"><b>확인된 주문 (본인 확인)</b><span id="st-verified" class="num">없음</span></div>
+  <div class="card"><b>접수 기록</b><span id="st-requests" class="num">없음</span></div>
+  <div class="card"><b>상담원 연결</b><span id="st-transfer">없음</span></div>
+</div>
+
+<main>
+  <section class="phone">
+    <div class="screen"><div id="display"></div><button id="back" title="한 자리 지우기" aria-label="한 자리 지우기" disabled>⌫</button></div>
+    <div id="callstate">통화 전</div>
+    <div id="keys"></div>
+    <div class="calls">
+      <button id="start" title="통화 시작" aria-label="통화 시작"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></button>
+      <button id="hangup" title="통화 끊기" aria-label="통화 끊기" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></button>
+    </div>
+    <p class="hint">초록 버튼으로 통화를 시작합니다. 숫자는 화면이나 키보드로 누릅니다. 한 자리 지우기 ⌫(Backspace), 전부 지우기 *, 제출 #(Enter).</p>
+    <hr>
+    <b>말하기</b> <span class="hint">(음성 대신 글자로 입력)</span>
+    <form id="say"><input id="text" placeholder="예: 배송 언제 와요?" autocomplete="off" disabled><button id="send" disabled>보내기</button></form>
+    <label class="hint voice"><input type="checkbox" id="voice"> <b>음성 모드</b><br>전화처럼 그냥 말하면 됩니다. 말을 멈추면 알아채고 봇이 소리로 답합니다. 크레딧을 더 씁니다.</label>
+    <button id="mic" disabled>🎤 음성 모드를 켜면 듣기 시작합니다</button>
+    <div class="meter"><div id="level"></div></div>
+    <div class="hint" id="micname">음성 모드를 켜면 사용 중인 마이크 이름이 여기에 나옵니다.</div>
+    <audio id="playback" controls></audio>
+  </section>
+
+  <section class="card chat">
+    <h2>대화 기록 <small>고객이 들은 그대로</small></h2>
+    <div class="scroll" id="chat"><p class="hint">초록색 통화 버튼을 누르면 시작 멘트가 나옵니다.</p></div>
+  </section>
+
+  <div class="right">
+    <section class="card">
+      <h2>턴별 시간 <small>입력부터 답이 들리기 시작할 때까지</small></h2>
+      <div class="legend"><span><i class="stt"></i>STT</span><span><i class="agent"></i>에이전트</span><span><i class="tts"></i>TTS</span></div>
+      <div id="bars"></div>
+    </section>
+    <section class="card logs">
+      <h2>툴 호출 로그 <small>툴 호출과 안전장치 동작</small></h2>
+      <div class="scroll" id="trace"></div>
+    </section>
+  </div>
+</main>
+
+<div class="foot">
+  <section class="card">
+    <h2>테스트용 주문번호 <small>주문번호를 누르면 표시창에 올라갑니다 · 그다음 # 을 눌러 제출 · 행사 문의는 9</small></h2>
+    <table><thead><tr><th>주문번호</th><th>상품</th><th>채널</th><th>상태</th><th>해 볼 만한 말</th></tr></thead><tbody id="orders"></tbody></table>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const TOOL = { verify_order: "주문 확인", get_delivery_status: "배송 조회", submit_request: "요청 접수", transfer_to_agent: "상담원 연결" };
+const REQ = { cancel: "취소", return: "반품", gift_missing: "사은품 누락", damaged: "파손·불량" };
+const REASON = { already_shipped: "이미 출고됨", in_transit: "배송 중 (받은 뒤 가능)", not_shipped: "아직 출고 전 (취소 대상)", not_gift_eligible: "사은품 대상 아님", not_delivered: "받은 상품 없음", channel_delivery: "채널 직접 배송" };
+const WHY = { customer_request: "고객 요청", strong_complaint: "강한 불만", recognition_failed: "음성 인식 실패", verification_failed: "주문 확인 실패", sensitive_topic: "민감 상담", exception_case: "예외 상황", unsupported_request: "처리 불가 요청", other: "기타" };
+const HINT = { trace: "툴을 부르거나 안전장치가 동작하면 여기에 한 줄씩 쌓입니다.", bars: "고객이 입력하면 턴마다 걸린 시간이 막대로 나타납니다." };
+let callId = null, busy = false, turnNo = 0;
+let turns = [], turn = null;  // 턴별 시간: { no, stt, agent, tts } (ms)
+let micStream = null, heard = null, audio = null, playAt = 0;
+const sources = [];
+
+// 봇 음성은 조각(16비트 24kHz PCM)으로 온다. 온 순서대로 빈틈없이 이어 붙여 튼다
+function play(clip) {
+  audio = audio || new AudioContext({ sampleRate: 24000 });
+  if (audio.state === "suspended") audio.resume();
+  const bytes = Uint8Array.from(atob(clip.pcm), c => c.charCodeAt(0));
+  const samples = new Int16Array(bytes.buffer, 0, bytes.length >> 1);
+  const buffer = audio.createBuffer(1, samples.length, 24000);
+  const out = buffer.getChannelData(0);
+  for (let i = 0; i < samples.length; i++) out[i] = samples[i] / 32768;
+  const source = audio.createBufferSource();
+  source.buffer = buffer; source.connect(audio.destination);
+  playAt = Math.max(playAt, audio.currentTime + 0.05);
+  source.start(playAt); playAt += buffer.duration;
+  sources.push(source); source.onended = () => sources.splice(sources.indexOf(source), 1);
+}
+function hush() { sources.splice(0).forEach(s => { s.onended = null; try { s.stop(); } catch {} }); playAt = 0; }
+function notice(text) { $("chat").append(el("div", "notice", esc(text))); $("chat").scrollTop = 1e9; }
+
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+const sec = ms => (ms / 1000).toFixed(1) + "초";
+// 봇(bot·filler)은 이름표 + 본문, 고객(customer·keypad)은 작은 꼬리표 + 말풍선. who는 옆에 붙는 짧은 설명
+function say(cls, who, text) {
+  const head = cls === "bot" || cls === "filler" ? `<div class="who"><i></i><b>AI 상담원</b><span>${who}</span></div>` : `<small>${who}</small>`;
+  $("chat").append(el("div", "msg " + cls, `${head}<p>${esc(text)}</p>`)); $("chat").scrollTop = 1e9;
+}
+
+// 툴 호출 로그 한 줄. status: ok(성공) / deny(거부) / err(오류). input·result는 이미 esc된 HTML
+function logRow(status, name, input, result, raw) {
+  $("trace").querySelector(".hint")?.remove();
+  const row = el("div", "log " + status, `<span class="badge">${{ ok: "성공", deny: "거부", err: "오류" }[status]}</span><div class="name">${name}<small>${turnNo}턴</small></div>`
+    + `<div class="body">${input ? `<span class="sub">입력</span> ${input}<br>` : ""}<span class="sub">결과</span> ${result}</div>`);
+  if (raw) { const d = el("details", "", "<summary>원본 보기</summary>"); d.append(el("pre", "", esc(JSON.stringify(raw, null, 1)))); row.lastChild.append(d); }
+  $("trace").append(row); $("trace").scrollTop = 1e9;
+}
+
+// 턴별 시간 막대를 전부 다시 그린다. 눈금은 기본 0~4초, 더 긴 턴이 있으면 그 턴에 맞춘다
+function drawBars() {
+  if (!turns.length) return $("bars").innerHTML = `<p class="hint">${HINT.bars}</p>`;
+  const sum = t => (t.stt || 0) + (t.agent || 0) + (t.tts || 0);
+  const scale = Math.max(4000, ...turns.map(sum));
+  const seg = (cls, label, ms) => ms ? `<span class="${cls}" style="width:${ms / scale * 100}%" title="${label} ${sec(ms)}"></span>` : "";
+  $("bars").style.setProperty("--one-sec", 100000 / scale + "%");
+  $("bars").innerHTML = '<div class="row axis"><span></span><div class="lane"><span>1초</span></div><span></span></div>' + turns.map(t => {
+    const note = [t.first != null && "에이전트 첫 응답 " + sec(t.first), t.firstAudio != null && "입력부터 첫 소리까지 " + sec(t.firstAudio)].filter(Boolean).join(" · ");
+    return `<div class="row" title="${note}"><span class="sub">${t.no}턴</span><div class="lane"><div class="track">${seg("stt", "STT", t.stt)}${seg("agent", "에이전트", t.agent)}${seg("tts", "TTS", t.tts)}</div></div>`
+      + `<b class="num">${busy && t === turn && t.agent == null ? '<span class="spin"></span>' : sec(sum(t))}</b></div>`;
+  }).join("");
+  $("bars").scrollTop = 1e9;
+}
+
+function lock(on) {
+  busy = on;
+  document.querySelectorAll("#keys button, #back, #text, #send").forEach(b => b.disabled = on || !callId);
+  $("mic").disabled = !micStream;
+  $("hangup").disabled = on || !callId;
+  drawBars();  // 기다리는 표시를 켜고 끈다
+}
+
+// 툴 호출을 [상태, 이름, 입력 요약, 결과 요약]으로 바꾼다
+function toolLine(t) {
+  const r = t.result, name = TOOL[t.name] || t.name, guard = " (안전장치)";
+  const order = t.input.order_number ? `주문번호 <span class="num">${esc(t.input.order_number)}</span>` : "";
+  if (t.name === "verify_order") {
+    if (r.ok) return ["ok", name, order, `확인됨 · ${r.order.ordered_at} 주문 · ${esc(r.order.items.join(", "))}`];
+    if (r.error === "not_from_keypad") return ["deny", name, order, "키패드로 입력된 번호가 아님" + guard];
+    return ["deny", name, order, `조회 실패: ${r.error === "not_found" ? "없는 주문번호" : "자릿수 오류"} · 실패 ${r.failed_attempts}회`];
+  }
+  if (t.name === "submit_request") {
+    const title = `${name} (${REQ[t.input.request_type]})`, input = `${order} · 고객 확인 ${t.input.customer_confirmed ? "받음" : "전"}`;
+    if (r.error === "not_verified") return ["deny", title, input, "본인 확인이 안 된 주문" + guard];
+    if (r.error === "confirmation_required") return ["deny", title, input, "고객 확인 전에는 접수할 수 없음" + guard];
+    if (r.error) return ["deny", title, input, esc(r.message)];
+    if (r.eligible === false) return ["deny", title, input, `접수 불가: ${REASON[r.reason] || r.reason}` + guard];
+    if (r.submitted) return ["ok", title, input, `<b>접수 완료</b> · ${r.request_id}`];
+    return ["ok", title, input, "접수 가능 · 고객에게 먼저 물어봄 (아직 접수 안 함)"];
+  }
+  if (r.error === "not_verified") return ["deny", name, order, "본인 확인이 안 된 주문" + guard];
+  if (t.name === "get_delivery_status") {
+    if (r.trackable === false) return ["ok", name, order, `${esc(r.channel)} 직접 배송이라 조회 불가`];
+    const boxes = r.shipments.map(s => s.status + (s.carrier ? ` ${s.carrier}` : "") + (s.status === "배송완료" ? ` ${s.delivered_at} 완료` : s.eta ? ` ${s.eta} 도착 예정` : "")).join(" / ");
+    return ["ok", name, order, `${esc(boxes)}${r.shipping_delayed ? " · 출고 지연" : ""}${r.gift.eligible ? " · 사은품 대상" : ""}`];
+  }
+  if (t.name === "transfer_to_agent") return ["ok", name, `사유: ${WHY[t.input.reason] || t.input.reason}`, `연결 기록됨 · ${esc(t.input.summary)}`];
+  return ["ok", name, "", "호출됨"];
+}
+
+function onEvent(ev) {
+  const v = ev.value;
+  if (ev.type === "input") {
+    const keypad = v.channel === "keypad", failed = v.channel === "system";
+    const shown = failed ? "(알아듣지 못함)" : v.text;
+    say(keypad ? "keypad" : "customer", keypad ? "고객 · 키패드" : heard ? "고객 · 음성 (인식된 글)" : "고객 · 말", keypad ? v.text + " #".repeat(v.text !== "9") : shown);
+    turn = { no: ++turnNo, stt: heard?.ms, agent: null, tts: null }; turns.push(turn); drawBars();
+    if (heard && failed) logRow("err", "음성 인식 (STT)", "", "알아듣지 못함");
+    heard = null;
+  } else if (ev.type === "stt") {
+    heard = v;
+  } else if (ev.type === "audio") {
+    if (v.error) logRow("err", "음성 합성 (TTS)", "", esc(v.error));
+    else {
+      play(v);
+      // TTS 구간 = 답변 첫 문장의 소리가 나오기까지 걸린 시간 (조회 중 멘트의 음성은 넣지 않는다)
+      if (v.start && turn?.agent != null && turn.tts == null) { turn.tts = v.ms; drawBars(); }
+    }
+  } else if (ev.type === "voice") {
+    if (turn) { turn.firstAudio = v.first_audio_ms; drawBars(); }
+  } else if (ev.type === "tool") {
+    logRow(...toolLine(v), { 입력: v.input, 결과: v.result });
+  } else if (ev.type === "filler") {
+    say("filler", "조회하는 동안", v);
+  } else if (ev.type === "guard") {
+    logRow("deny", "출력 검사", "", `조회 결과에 없는 값(${esc(v.join(", "))}) 발견 → 답을 내보내지 않고 다시 작성 (안전장치)`);
+  } else if (ev.type === "checked") {
+    logRow("ok", "출력 검사", "", "답의 날짜·송장번호가 조회 결과와 일치");
+  } else if (ev.type === "reply") {
+    say("bot", "", v);
+  } else if (ev.type === "timing") {
+    if (turn) { turn.agent = v.total_ms; turn.first = v.first_response_ms; drawBars(); }
+  } else if (ev.type === "end") {
+    notice("상담원에게 연결되었습니다 · 통화 종료");
+    callId = null; setCall("통화 종료");
+  } else if (ev.type === "state") {
+    $("display").textContent = v.buffer;
+    $("st-verified").textContent = v.verified.join(", ") || "없음";
+    $("st-requests").textContent = v.requests.map(r => `${REQ[r.type]} ${r.order_number}`).join(", ") || "없음";
+    $("st-transfer").textContent = v.transfer ? WHY[v.transfer] || v.transfer : "없음";
+  }
+}
+
+async function send(path, body) {
+  if (!callId || busy) return;
+  const before = turnNo;
+  lock(true);
+  try {
+    const raw = body instanceof Blob;  // 마이크 녹음은 그대로 보낸다
+    const res = await fetch(`/api/calls/${callId}/${path}${$("voice").checked ? "?tts=1" : ""}`,
+      { method: "POST", headers: { "Content-Type": raw ? body.type : "application/json" }, body: raw ? body : JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json()).detail || res.status);
+    const reader = res.body.getReader(), decoder = new TextDecoder();
+    let buffer = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let i;
+      while ((i = buffer.indexOf("\n")) >= 0) { const line = buffer.slice(0, i); buffer = buffer.slice(i + 1); if (line.trim()) onEvent(JSON.parse(line)); }
+    }
+  } catch (e) {
+    notice("오류: " + e.message);
+  }
+  lock(false);
+  // 봇이 답한 뒤에만 말 입력칸으로 옮긴다 (숫자를 누르는 중에는 키보드 입력이 계속 키패드로 가게)
+  if (callId && turnNo > before && !$("voice").checked) $("text").focus();
+}
+
+// 키 입력은 줄을 세워 하나씩 보낸다 (빨리 눌러도 빠지지 않게). 화면 버튼·키보드·주문번호 표가 모두 이 함수를 쓴다
+let keyQueue = Promise.resolve();
+function tap(key) { return keyQueue = keyQueue.then(() => send("key", { key })); }
+document.onkeydown = e => {
+  if (!callId || e.ctrlKey || e.metaKey || e.altKey || e.target.closest("input, textarea")) return;  // 말 입력칸에서는 평소처럼 글자가 써진다
+  if (e.key === "Enter" && e.target.closest("button")) return;  // 버튼 위의 Enter는 그 버튼을 누르는 것
+  const key = /^[0-9*#]$/.test(e.key) ? e.key : { Backspace: "back", Enter: "#" }[e.key];
+  if (key) { e.preventDefault(); tap(key); }
+};
+$("back").onclick = () => tap("back");
+
+// 음성 모드(연속 대화): 통화 중에는 마이크를 계속 듣는다. 말소리가 나면 녹음을 시작하고,
+// 말이 끝난 뒤 잠깐 조용하면 발화가 끝난 것으로 보고 그 부분만 서버로 보낸다. 버튼을 누를 필요가 없다.
+const VAD = {
+  level: 0.02,       // 이보다 큰 소리(0~1)를 말소리로 본다. 주변이 시끄러우면 올리고, 목소리가 작으면 내린다
+  silenceMs: 900,    // 이만큼 조용하면 발화가 끝난 것으로 본다. 줄이면 반응이 빨라지지만 말 중간에 끊길 수 있다
+  minSpeechMs: 300,  // 이보다 짧은 소리(기침, 탁 소리)는 버린다
+  prerollMs: 300,    // 말소리를 알아채기 직전의 소리도 함께 보낸다 (첫 음절이 잘리지 않게)
+  maxSpeechMs: 15000,  // 한 발화의 최대 길이. 끝을 못 잡아도 여기서 끊어 보낸다
+};
+// 참고: 음량만으로 말소리를 가린다. 시끄러운 곳에서는 잘못 잡힌다. 그럴 때는 음성 감지 모델(Silero VAD 등)로 바꾼다
+// 참고: 봇이 말하는 동안에는 듣지 않는다(스피커 소리를 고객 말로 착각하지 않게). 말 끊고 끼어들기는 아직 없다
+let micCtx = null, paused = false, speech = null, quietSince = 0, preroll = [], micState = "", noise = 0;
+
+function setMic(text) { if (micState !== text) $("mic").textContent = micState = text; }
+
+function toWav(frames, rate) {
+  // 16kHz 근처로 줄여 16비트 wav로 만든다 (받아쓰기에는 충분하고 올리는 양이 3분의 1이 된다)
+  const step = Math.max(1, Math.round(rate / 16000)), total = frames.reduce((n, f) => n + f.length, 0);
+  const all = new Float32Array(total); let at = 0;
+  for (const f of frames) { all.set(f, at); at += f.length; }
+  const count = Math.floor(total / step), view = new DataView(new ArrayBuffer(44 + count * 2));
+  const text = (pos, s) => [...s].forEach((c, i) => view.setUint8(pos + i, c.charCodeAt(0)));
+  text(0, "RIFF"); view.setUint32(4, 36 + count * 2, true); text(8, "WAVEfmt "); view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, rate / step, true);
+  view.setUint32(28, rate / step * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  text(36, "data"); view.setUint32(40, count * 2, true);
+  for (let i = 0; i < count; i++) {
+    let sum = 0; for (let j = 0; j < step; j++) sum += all[i * step + j];
+    view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, sum / step)) * 32767, true);
+  }
+  return new Blob([view], { type: "audio/wav" });
+}
+
+function onMicFrame(e) {
+  const frame = new Float32Array(e.inputBuffer.getChannelData(0));
+  const level = frame.reduce((m, x) => Math.max(m, Math.abs(x)), 0), now = performance.now();
+  $("level").style.width = Math.min(100, level * 300) + "%";
+  const botSpeaking = audio && audio.currentTime < playAt + 0.3;
+  if (!callId || busy || paused || botSpeaking) {  // 들을 때가 아니면 모아 둔 것을 버린다
+    speech = null; preroll = [];
+    return setMic(paused ? "⏸ 듣기 멈춤 · 누르면 다시 듣기" : !callId ? "🎤 통화를 시작하면 듣습니다" : busy ? "… 처리 중" : "🔊 봇이 말하는 중");
+  }
+  if (!speech) {
+    preroll.push(frame);
+    while (preroll.length * frame.length / micCtx.sampleRate * 1000 > VAD.prerollMs + 100) preroll.shift();
+    // 말소리의 기준은 주변 소음의 3배(최소 VAD.level). 소음이 큰 마이크에서도 소음을 말로 착각하지 않는다
+    if (level > Math.max(VAD.level, noise * 3)) { speech = { frames: preroll, began: now, loudest: level }; preroll = []; quietSince = 0; }
+    else noise = noise * 0.9 + level * 0.1;  // 조용할 때의 음량을 주변 소음으로 기억한다
+    return setMic(speech ? "● 듣고 있습니다…" : "🎤 말씀하세요 · 누르면 듣기 멈춤");
+  }
+  speech.frames.push(frame);
+  speech.loudest = Math.max(speech.loudest, level);
+  // "조용해졌다"는 방금 목소리의 4분의 1 아래로 내려간 것. 고정값이면 바탕 소음이 큰 마이크에서 발화가 끝나지 않는다
+  const quiet = level < Math.max(VAD.level * 0.6, noise * 1.5, speech.loudest * 0.25);
+  if (quiet) quietSince = quietSince || now; else quietSince = 0;
+  const tooLong = now - speech.began > VAD.maxSpeechMs;  // 끝을 못 잡아도 여기서는 끊어서 보낸다
+  if (!tooLong && (!quietSince || now - quietSince < VAD.silenceMs)) return;
+  const done = speech; speech = null;
+  if ((quietSince || now) - done.began < VAD.minSpeechMs) return;  // 너무 짧은 소리는 말이 아니다
+  const blob = toWav(done.frames, micCtx.sampleRate);
+  $("playback").src = URL.createObjectURL(blob); $("playback").style.display = "block";  // 방금 보낸 발화를 다시 들어 볼 수 있다
+  send("speak", blob);
+}
+
+$("voice").onchange = async e => {
+  if (e.target.checked) {
+    try {
+      // 자동 음량 조절은 끈다. 켜 두면 조용할 때 바탕 소음을 키워서 말이 끝난 것을 알아채기 어렵다
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false } });
+      micCtx = new AudioContext();
+      const listener = micCtx.createScriptProcessor(2048, 1, 1), mute = micCtx.createGain();
+      mute.gain.value = 0;  // 마이크 소리가 스피커로 나가지 않게
+      listener.onaudioprocess = onMicFrame;
+      micCtx.createMediaStreamSource(micStream).connect(listener); listener.connect(mute); mute.connect(micCtx.destination);
+      $("micname").textContent = "마이크: " + (micStream.getAudioTracks()[0].label || "이름 없음");
+    } catch { notice("마이크를 쓸 수 없어 봇 목소리만 켭니다. 말은 글자로 입력해 주세요."); }
+  } else {
+    micStream?.getTracks().forEach(t => t.stop()); micStream = null; micCtx?.close(); micCtx = null; hush();
+    setMic("🎤 음성 모드를 켜면 듣기 시작합니다"); $("level").style.width = 0;
+  }
+  lock(busy);
+};
+$("mic").onclick = () => { paused = !paused; };
+
+$("start").onclick = async () => {
+  hush();
+  const tts = $("voice").checked;
+  $("start").disabled = true; setCall(tts ? "음성 준비 중…" : "연결 중…");
+  const call = await (await fetch("/api/calls" + (tts ? "?tts=1" : ""), { method: "POST" })).json();
+  $("start").disabled = false;
+  (call.audio || []).forEach(clip => clip.pcm && play(clip));
+  callId = call.id; turnNo = 0; turns = []; turn = null;
+  $("model").textContent = "모델 " + call.model; $("today").textContent = "데모 기준일 " + call.today;
+  $("chat").innerHTML = ""; $("trace").innerHTML = `<p class="hint">${HINT.trace}</p>`;
+  onEvent({ type: "state", value: { buffer: "", verified: [], requests: [], transfer: null } });
+  say("bot", "시작 멘트 (고정)", call.opening);
+  setCall("통화 중"); lock(false);
+};
+const setCall = text => $("callstate").textContent = text;
+// 끊기는 화면에서만 통화를 닫는다 (서버에는 끊는 요청이 따로 없다)
+$("hangup").onclick = () => { hush(); callId = null; setCall("통화 종료"); notice("통화를 끊었습니다"); lock(false); };
+const ABC = { 2: "ABC", 3: "DEF", 4: "GHI", 5: "JKL", 6: "MNO", 7: "PQRS", 8: "TUV", 9: "WXYZ", 0: "+" };
+"123456789*0#".split("").forEach(k => { const b = el("button", "", `${k}<small>${ABC[k] || ""}</small>`); b.disabled = true; b.onclick = () => tap(k); $("keys").append(b); });
+$("say").onsubmit = e => { e.preventDefault(); const text = $("text").value.trim(); if (text) { $("text").value = ""; send("say", { text }); } };
+$("trace").innerHTML = `<p class="hint">${HINT.trace}</p>`; drawBars();
+
+// 표의 주문번호를 누르면 숫자만 키패드로 대신 눌러 준다 (지우기·# 은 누르지 않는다). 서버에는 진짜 키 입력과 똑같이 들어간다
+$("orders").onclick = async e => {
+  const b = e.target.closest(".pick");
+  if (!b || busy) return;
+  if (!callId) return notice("먼저 초록색 통화 버튼을 눌러 주세요.");
+  for (const k of b.textContent) tap(k);
+};
+
+const TRY = o => o.fulfillment === "센터배송" ? "방송 보고 샀는데 배송 조회가 안 돼요"
+  : o.gift ? "사은품이 안 왔어요"
+  : o.boxes.length > 1 ? "세트 샀는데 하나만 왔어요"
+  : o.status === "상품준비중" ? "주문 취소하고 싶어요 / 며칠째 출고가 안 돼요"
+  : o.status === "배송중" ? "배송 언제 와요? / 송장번호 알려 주세요 / 취소하고 싶어요"
+  : "반품하고 싶어요 / 받았는데 깨져서 왔어요";
+fetch("/api/orders").then(r => r.json()).then(list => list.forEach(o => $("orders").append(el("tr", "",
+  `<td><button class="pick" title="표시창에 올리기">${o.order_number}</button></td><td>${esc(o.items.join(", "))}</td><td>${esc(o.channel)}</td><td>${esc(o.boxes.length > 1 ? o.boxes.join(" + ") : o.status)}</td><td>${TRY(o)}</td>`))));
+</script>
+</body>
+</html>
